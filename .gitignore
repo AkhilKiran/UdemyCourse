@@ -1,0 +1,12 @@
+# macOS folder metadata
+.DS_Store
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local virtualenv. Recreate it with: uv sync
+.venv/
+
+# Secrets. Keep the real values in .env, which stays on your machine.
+.env
