@@ -60,7 +60,7 @@ def conversation():
     print(f"GPT: {gpt_response}\n")
     last_message = gpt_response
 
-    # Then alternate: Gemini replies to GPT, GPT replies to Gemini, ...
+    # Then alternate: Gemini replies to GPT, GPT replies to Gemini.
     for _ in range(2):
         gemini_response = gemini_call(last_message)
         print(f"Gemini: {gemini_response}\n")
