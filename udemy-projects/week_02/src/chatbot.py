@@ -8,6 +8,33 @@ class Tones(Enum):
     ASSERTIVE = 2
     ANGRY = 3
 
+system_prompts  = { 
+    Tones.FLIRTY: """ You are going to recieve a message.
+                    You have to ensure that it gets re-written in a flirty tone. 
+                    Make sure the message is seductive, playful, and forward. 
+                    Don't be shy to make plans or ask to see the person if the message offers that. 
+                    Act as if they already want you, have lots of confidence.
+                    Keep it short sometimes flirting is all about what is not said more than what is said. 
+                """, 
+
+    Tones.ASSERTIVE: """ You are going to recieve a message.
+                    You have to ensure that it gets re-written in a assertive tone. 
+                    Make sure the message is forward, direct, and unforgiving. 
+                    Don't be shy to tell it how things are, you mean what you say always. 
+                    Act as if you operate with nothing to lose at all.
+                    Assesrtion is all about having you put your foot down and not want to look the other way. 
+                """,
+
+                
+    Tones.ANGRY: """ You are going to recieve a message.
+                    You have to ensure that it gets re-written in a angry tone. 
+                    Make sure the message is abrasive, concise, rage-induced. 
+                    Don't be shy to sprinkle any bad words or vocab you would think is taboo in there. 
+                    Act as if they have really wronged you in a really shitty way.
+                    The length of the message shouldn't be longer than 5 lines, eventhough you have a lot to say shorten it if you can. 
+                """ 
+}
+
 load_dotenv()
 
 openai_key = os.getenv("OPENAI_API_KEY")
@@ -38,22 +65,23 @@ What it is, how to run, which tools exist, what you learned from Week 2, link to
 '''
 
 # Step 1
-def rewrite(message: str, tone: enum) -> str: 
-    system_prompt = """ You are going to recieve a message.
-                        You have to ensure that it gets re-written in a flirty tone. 
-                        Make sure the message is seductive, playful, and forward. 
-                        Don't be shy to make plans or ask to see the person if the message offers that. 
-                        Act as if they already want you, have lots of confidence.
-                        Keep it short sometimes flirting is all about what is not said more than what is said. 
-                    """
+def rewrite(message: str, tone: str) -> str:
+
+    system_prompt = None
+
+    for selected_tone in Tones:
+        if tone.lower() == selected_tone.name.lower():
+            system_prompt = system_prompts[selected_tone]
+    if system_prompt is None: 
+        raise ValueError('Tone not supported')
 
     messages= [{"role":"system", "content": system_prompt}, 
-               {"role": "user", "content" : message}]
+            {"role": "user", "content" : message}]
     response = client.responses.create(model='gpt-5.1', input=messages)
+
     return response.output_text 
 
-
-print(rewrite('Hi, I really do like you, and was wondering if maybe you would be interested in getting to know each other a bit better?'))
+print(rewrite('Hi, so sorry but I slept with your boyfriend last night, he was really good in bed.', 'angry'))
 
 
 
