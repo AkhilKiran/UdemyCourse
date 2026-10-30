@@ -12,7 +12,7 @@ class Tones(Enum):
     PROFESSIONAL = 4
 
 system_prompts  = { 
-    Tones.FLIRTY: """ You are going to recieve a message, ensure you sanitize first if needed then rewrite.
+    Tones.FLIRTY: """ You are going to recieve a message, ensure you sanitize first when message contains any email, then rewrite.
                     You have to ensure that it gets re-written in a flirty tone. 
                     Make sure the message is seductive, playful, and forward. 
                     Don't be shy to make plans or ask to see the person if the message offers that. 
@@ -20,7 +20,7 @@ system_prompts  = {
                     Keep it short sometimes flirting is all about what is not said more than what is said. 
                 """, 
 
-    Tones.ASSERTIVE: """ You are going to recieve a message, ensure you sanitize first if needed then rewrite.
+    Tones.ASSERTIVE: """ You are going to recieve a message, ensure you sanitize first when message contains any email, then rewrite.
                     You have to ensure that it gets re-written in a assertive tone. 
                     Make sure the message is forward, direct, and unforgiving. 
                     Don't be shy to tell it how things are, you mean what you say always. 
@@ -29,7 +29,7 @@ system_prompts  = {
                 """,
 
                 
-    Tones.ANGRY: """ You are going to recieve a message, ensure you sanitize first if needed then rewrite.
+    Tones.ANGRY: """ You are going to recieve a message, ensure you sanitize first when message contains any email, then rewrite.
                     You have to ensure that it gets re-written in a angry tone. 
                     Make sure the message is abrasive, concise, and rage-induced. 
                     Don't be shy to sprinkle any bad words or vocab you would think is taboo in there. 
@@ -37,7 +37,7 @@ system_prompts  = {
                     The length of the message shouldn't be longer than 5 lines, eventhough you have a lot to say shorten it if you can. 
                 """,
                 
-    Tones.PROFESSIONAL: """ You are going to recieve a message, ensure you sanitize first if needed then rewrite.
+    Tones.PROFESSIONAL: """ You are going to recieve a message, ensure you sanitize first when message contains any email, then rewrite.
                     You have to ensure that it gets re-written in a professional tone. 
                     Make sure the message is coridal, polite, and accurate. 
                     Use sophisticated vocabulary that is fit for an office setting.
@@ -50,30 +50,6 @@ load_dotenv()
 
 openai_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_key)
-
-'''
-1. One dumb happy path
-Script or notebook: hard-coded message + tone → model returns a rewrite. Prove the API works before any UI/tools.
-
-2. Clean function: rewrite(message, tone) -> str
-Move that into a small Python module. Add 2-3 tones as an enum/list. Print results for a few examples.
-
-3. First real tool (function-calling)
-One tool only, e.g. estimate_length or strip_pii (emails/phones). Wire the model so it must call the tool when useful — verify in logs that the tool ran.
-
-4. Second tool
-e.g. critique_tone(original, rewrite, tone) -> feedback or a hard reject if rewrite is empty/too long. Keep tools boring and testable.
-
-5. Thin UI
-Gradio (or similar): text box + tone dropdown + submit → show rewrite (+ optional “tools used” panel). No fancy design.
-
-6. Glue + failure modes
-Empty input, API errors, tool failures — show a clear message instead of crashing.
-
-7. README + push
-What it is, how to run, which tools exist, what you learned from Week 2, link to live ToneShift product. Commit early and often.
-
-'''
 
 tools = [
     {
@@ -126,8 +102,8 @@ def rewrite(message: str, tone: str) -> str:
     for item in response.output:
         if item.type == 'function_call': 
             if item.name == 'strip_pii':
-                message = json.loads(item.arguments)['message']
-                sanitized_message = strip_pii(message)
+                function_call_message = json.loads(item.arguments)['message']
+                sanitized_message = strip_pii(function_call_message)
                 print(item.call_id)
                 running_history.append(
                     {
@@ -142,7 +118,4 @@ def rewrite(message: str, tone: str) -> str:
             print("There was no need to sanitize the message.")
             break
    
-
     return response.output_text
-
-print(rewrite('I think I can get those reports by monday but Im not really how fast I can get the data from marketing, Ive emailed akhil@gmail.com, and Im waiting for his response.', 'professional'))
