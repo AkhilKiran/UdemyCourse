@@ -104,12 +104,17 @@ def critique_tone(user_input: str) -> bool:
 
 def rewrite(message: str, tone: str) -> str:
 
+    if len(message) == 0: 
+        raise ValueError('Please enter a message')
+
     system_prompt = None
 
     for selected_tone in Tones:
         if tone.lower() == selected_tone.name.lower():
             system_prompt = system_prompts[selected_tone]
             break
+        elif not tone: 
+            raise ValueError('Please pick a tone')
     if system_prompt is None: 
         raise ValueError('Tone not supported')
 
@@ -117,9 +122,11 @@ def rewrite(message: str, tone: str) -> str:
                {"role": "user", "content" : message}]
 
     while True: 
-
-        response = client.responses.create(model='gpt-5.1', input=running_history, tools=tools, tool_choice="auto")
-        print(f"Here's the response output for the recurring API call: {response.output}")
+        try:
+            response = client.responses.create(model='gpt-5.1', input=running_history, tools=tools, tool_choice="auto")
+            print(f"Here's the response output for the recurring API call: {response.output}")
+        except: 
+            print("Something went wrong when calling the API")
 
         running_history += response.output
         print(f"Here's the running history containing the recurring API call: {running_history}")
