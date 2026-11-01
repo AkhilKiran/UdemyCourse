@@ -104,8 +104,11 @@ def critique_tone(user_input: str) -> bool:
 
 def rewrite(message: str, tone: str) -> str:
 
-    if len(message) == 0: 
-        raise ValueError('Please enter a message')
+    if not message.strip():
+        return "Please enter a message"
+    
+    if not tone: 
+        return "Please pick a tone"
 
     system_prompt = None
 
@@ -113,23 +116,27 @@ def rewrite(message: str, tone: str) -> str:
         if tone.lower() == selected_tone.name.lower():
             system_prompt = system_prompts[selected_tone]
             break
-        elif not tone: 
-            raise ValueError('Please pick a tone')
     if system_prompt is None: 
-        raise ValueError('Tone not supported')
+        return "Tone not supported"
 
     running_history = [{"role":"system", "content": system_prompt}, 
                {"role": "user", "content" : message}]
 
-    while True: 
+    round_trips = 0
+    while round_trips <= 5: 
         try:
             response = client.responses.create(model='gpt-5.1', input=running_history, tools=tools, tool_choice="auto")
             print(f"Here's the response output for the recurring API call: {response.output}")
-        except: 
-            print("Something went wrong when calling the API")
 
-        running_history += response.output
-        print(f"Here's the running history containing the recurring API call: {running_history}")
+            running_history += response.output
+            print(f"Here's the running history containing the recurring API call: {running_history}")
+
+            round_trips += 1
+            print(round_trips)
+        except Exception as e:
+            print(e) 
+            return "Something went wrong talking to the model"
+
             
         tool_calls = [item for item in response.output if item.type == "function_call"]
         print(f"HERE ARE THE TOOLS: {tool_calls}")
@@ -138,34 +145,38 @@ def rewrite(message: str, tone: str) -> str:
             return response.output_text
 
         for tooling in tool_calls:
-            if tooling.name == "strip_pii":
-                sanitize_call_message = json.loads(tooling.arguments)['message']
-                sanitized_message = strip_pii(sanitize_call_message)
-                running_history.append(
-                    {
-                        "type": "function_call_output", 
-                        "call_id": tooling.call_id,
-                        "output": sanitized_message 
-                    }
-                )
-                print(f"Here's the santized message ready for the next call: {sanitized_message}")
-            elif tooling.name == "critique_tone":
-                critique_call_message = json.loads(tooling.arguments)['user_input']
-                critiqued_message = critique_tone(critique_call_message)
-                if critiqued_message: 
-                    running_history.append({
-                        "type": "function_call_output", 
-                        "call_id": tooling.call_id,
-                        "output": "Passed validation",
-                    })
-                else: 
-                    running_history.append({
-                        "type": "function_call_output", 
-                        "call_id": tooling.call_id,
-                        "output": "Failed validation",
-                    })                
+            try: 
+                if tooling.name == "strip_pii":
+                    sanitize_call_message = json.loads(tooling.arguments)['message']
+                    sanitized_message = strip_pii(sanitize_call_message)
+                    running_history.append(
+                        {
+                            "type": "function_call_output", 
+                            "call_id": tooling.call_id,
+                            "output": sanitized_message 
+                        }
+                    )
+                    print(f"Here's the santized message ready for the next call: {sanitized_message}")
+                elif tooling.name == "critique_tone":
+                    critique_call_message = json.loads(tooling.arguments)['user_input']
+                    critiqued_message = critique_tone(critique_call_message)
+                    if critiqued_message: 
+                        running_history.append({
+                            "type": "function_call_output", 
+                            "call_id": tooling.call_id,
+                            "output": "Passed validation",
+                        })
+                    else: 
+                        running_history.append({
+                            "type": "function_call_output", 
+                            "call_id": tooling.call_id,
+                            "output": "Failed validation",
+                        }) 
+            except Exception as e:
+                print(e) 
+                return "Tool calling hasn't worked"
 
-    return response.output_text
+    return "AI Couldn't produce sufficient results."
 
 # Front end ------------------------------
 
