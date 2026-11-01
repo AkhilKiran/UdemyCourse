@@ -4,6 +4,7 @@ import os
 import re
 import json
 from openai import OpenAI
+import gradio as gr
 
 class Tones(Enum): 
     FLIRTY = 1
@@ -158,3 +159,16 @@ def rewrite(message: str, tone: str) -> str:
                     })                
 
     return response.output_text
+
+# Front end ------------------------------
+
+dropdown_tones = []
+for tone in Tones: 
+    dropdown_tones.append(tone.name)
+
+gradio_input = gr.Textbox(label='Enter the message you want to re-write here:', lines=5)
+gradio_output = gr.Textbox(label='Response:', lines=5)
+gradio_dropdown = gr.Dropdown(choices=dropdown_tones, label='Tone')
+
+chat = gr.Interface(fn=rewrite, inputs=[gradio_input, gradio_dropdown] , title='ToneShift', outputs=gradio_output)
+chat.launch()
